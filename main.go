@@ -53,17 +53,24 @@ func postGame(ctx *gin.Context) {
 	var clientChoice UserChoice
 
 	//Bind JSON input to clientChoice and evaluate error
-	err := ctx.BindJSON(&clientChoice)
-	if err != nil {
+	
+	if err := ctx.BindJSON(&clientChoice); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON input"})
+		return
+	}
+	
+	if clientChoice.Choice == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Choice cannot be empty"})
+		return
+	}
+
+	//Call function and evaluate results
+	clientChoiceString, serverChoice, result := winnerEvaluator(clientChoice)
+	if result == "" {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
 	}
 
-	//Call and evaluate results
-	clientChoiceString, serverChoice, result := winnerEvaluator(clientChoice)
-	if result == "" {
-		return
-	}
 	ctx.IndentedJSON(http.StatusOK, gin.H{
 		"clientChoice": strings.Title(clientChoiceString),
 		"serverChoice": strings.Title(serverChoice),
